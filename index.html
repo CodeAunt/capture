@@ -26,11 +26,13 @@
 </div>
 <script>
     var video = document.querySelector("#videoElement");
-    video.setAttribute('autoplay', '');
-    video.setAttribute('muted', '');
-    video.setAttribute('playsinline', '');
     if (navigator.mediaDevices.getUserMedia) { // mediaDevices.
-        navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+        navigator.mediaDevices.getUserMedia({ 
+            audio: true, 
+            video: {
+                facingMode: 'environment'
+            } 
+        })
             .then(function (stream) {
             video.srcObject = stream;
             })
@@ -38,6 +40,7 @@
             alert("Something went wrong!");
             });
     }
+
     
 </script>
 </body>

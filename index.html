@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Display Webcam Stream</title>
- 
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <style>
 #container {
 	margin: 0px auto;
@@ -16,32 +16,83 @@
 	height: 375px;
 	background-color: #666;
 }
+#canvasElement {
+    width: 500px;
+	height: 375px;
+}
+
 </style>
 </head>
- 
+
 <body>
-<div id="container">
-	<video autoplay="true" id="videoElement"></video>
-    <button> Capture </button>
-</div>
+
+    <div id="container">
+        <canvas id="canvasElement"></canvas>
+        <video autoplay="true" id="videoElement"></video>
+        <button onclick="onCapture()"> Capture </button>
+        <button onclick="onConfirm()"> Confirm </button>
+    </div>
+
 <script>
     var video = document.querySelector("#videoElement");
+    var canvas = document.querySelector("#canvasElement");
+    // use this to ensure capture high-resolution image
+    var context = canvas.getContext("2d");
+    var scale = window.devicePixelRatio; //2
+    canvas.width = Math.floor(500*scale);
+    canvas.height = Math.floor(375*scale);
+    // console.log(scale);
+    context.scale(scale, scale)
+    
     if (navigator.mediaDevices.getUserMedia) { // mediaDevices.
         navigator.mediaDevices.getUserMedia({ 
             audio: true, 
             video: {
                 facingMode: 'environment'
             } 
-        })
-            .then(function (stream) {
+        }).then(function (stream) {
             video.srcObject = stream;
-            })
-            .catch(function (err0r) {
-            alert("Something went wrong!");
-            });
+        })
+        .catch(function (err0r) {
+        alert("Something went wrong!");
+        });
+    }
+    
+    var imgData = "";
+    function onCapture(){
+        context.drawImage(video, 0, 0, canvas.width/scale, canvas.height/scale); // 500 375
+        imgData = canvas.toDataURL('image/jpeg');
+        // console.log(imgData)
+    }
+    // new a image to wait for sketch
+    var sketch = new Image();
+    sketch.onload = function() {
+        context.drawImage(this, 0, 0, canvas.width/scale, canvas.height/scale);
     }
 
-    
+    function onConfirm(){
+        $.ajax({
+            type: "POST",
+            url: "http://47.96.36.15:5000/photo2sketch",
+            enctype: 'multipart/form-data',
+            data: {"image": imgData},
+            async:true,
+            headers: {  'Access-Control-Allow-Origin': '*'},
+            // jsonp: "successCallback",
+            crossDomain: true,
+            // dataType: "json",
+            success: function(result) {
+                if(result){
+                    console.log(result.data.resImage);                   
+                    sketch.src = result.data.resImage; // draw to sketch content
+                    // context.drawImage(sketch, 0, 0, canvas.width/scale, canvas.height/scale);
+                }else {
+                    console.log(fail)
+                }
+            }
+        })
+    }
+
 </script>
 </body>
 </html>
